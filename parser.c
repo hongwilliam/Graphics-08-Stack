@@ -17,23 +17,18 @@ Inputs:   char * filename
           struct matrix * polygons,
           screen s
 Returns:
-
 Goes through the file named filename and performs all of the actions listed in that file.
 The file follows the following format:
      Every command is a single character that takes up a line
      Any command that requires arguments must have those arguments in the second line.
      The commands are as follows:
-
      push: push a copy of the curent top of the coordinate system stack to the stack
-
      pop: remove the current top of the coordinate system stack
-
      All the shape commands work as follows:
         1) Add the shape to a temporary matrix
         2) Multiply that matrix by the current top of the coordinate system stack
         3) Draw the shape to the screen
         4) Clear the temporary matrix
-
      sphere: add a sphere -
              takes 4 arguemnts (cx, cy, cz, r)
      torus: add a torus to the polygon matrix -
@@ -48,7 +43,6 @@ The file follows the following format:
              takes 8 arguments (x0, y0, x1, y1, x2, y2, x3, y3)
      line: add a line to the edge matrix -
            takes 6 arguemnts (x0, y0, z0, x1, y1, z1)
-
      scale: create a scale matrix,
             then multiply the current top of the coordinate system stack -
             takes 3 arguments (sx, sy, sz)
@@ -58,16 +52,11 @@ The file follows the following format:
      rotate: create a rotation matrix,
              then multiply the transform matrix by the translation matrix -
              takes 2 arguments (axis, theta) axis should be x, y or z
-
      display: display the screen
-
      save: save the screen to a file -
            takes 1 argument (file name)
-
     quit: end parsing
-
 See the file script for an example of the file format
-
 IMPORTANT MATH NOTE:
 the trig functions int math.h use radian mesure, but us normal
 humans use degrees, so the file will contain degrees for rotations,
@@ -84,9 +73,11 @@ void parse_file ( char * filename,
   char line[255];
   clear_screen(s);
 
+  struct stack *cstacks = new_stack();
+
   color c;
   c.red = 0;
-  c.green = 0;
+  c.green = 255;
   c.blue = 0;
 
   if ( strcmp(filename, "stdin") == 0 )
@@ -118,6 +109,9 @@ void parse_file ( char * filename,
              xvals+1, yvals+1, zvals+1);
       add_box(polygons, xvals[0], yvals[0], zvals[0],
               xvals[1], yvals[1], zvals[1]);
+      matrix_mult(peek(cstacks), polygons);
+      draw_polygons(polygons, s, c);
+      polygons->lastcol = 0;
     }//end of box
 
     else if ( strncmp(line, "sphere", strlen(line)) == 0 ) {
@@ -127,6 +121,9 @@ void parse_file ( char * filename,
       sscanf(line, "%lf %lf %lf %lf",
              xvals, yvals, zvals, &r);
       add_sphere( polygons, xvals[0], yvals[0], zvals[0], r, step_3d);
+      matrix_mult(peek(cstacks), polygons);
+      draw_polygons(polygons, s, c);
+      polygons->lastcol = 0;
     }//end of sphere
 
     else if ( strncmp(line, "torus", strlen(line)) == 0 ) {
@@ -136,6 +133,9 @@ void parse_file ( char * filename,
       sscanf(line, "%lf %lf %lf %lf %lf",
              xvals, yvals, zvals, &r, &r1);
       add_torus(polygons, xvals[0], yvals[0], zvals[0], r, r1, step_3d);
+      matrix_mult(peek(cstacks), polygons);
+      draw_polygons(polygons, s, c);
+      polygons->lastcol = 0;
     }//end of torus
 
     else if ( strncmp(line, "circle", strlen(line)) == 0 ) {
@@ -145,6 +145,9 @@ void parse_file ( char * filename,
       sscanf(line, "%lf %lf %lf %lf",
              xvals, yvals, zvals, &r);
       add_circle( edges, xvals[0], yvals[0], zvals[0], r, step);
+      matrix_mult(peek(ctacks), edges);
+      draw_lines(edges, s, c);
+      edges->lastcol = 0;
     }//end of circle
 
     else if ( strncmp(line, "hermite", strlen(line)) == 0 ||
@@ -168,6 +171,9 @@ void parse_file ( char * filename,
       //printf("%d\n", type);
       add_curve( edges, xvals[0], yvals[0], xvals[1], yvals[1],
                  xvals[2], yvals[2], xvals[3], yvals[3], step, type);
+      matrix_mult(peek(cstacks), edges);
+      draw_lines(edges, s, c);
+      edges->lastcol = 0;
     }//end of curve
 
     else if ( strncmp(line, "line", strlen(line)) == 0 ) {
@@ -182,6 +188,9 @@ void parse_file ( char * filename,
         xvals[1], yvals[1], zvals[1]) */
       add_edge(edges, xvals[0], yvals[0], zvals[0],
                xvals[1], yvals[1], zvals[1]);
+      matrix_mult(peek(cstacks), edges);
+      draw_lines(edges, s, c);
+      edges->lastcol = 0;
     }//end line
 
     else if ( strncmp(line, "scale", strlen(line)) == 0 ) {
@@ -190,9 +199,10 @@ void parse_file ( char * filename,
       sscanf(line, "%lf %lf %lf",
              xvals, yvals, zvals);
       /* printf("%lf %lf %lf\n", */
-      /* 	xvals[0], yvals[0], zvals[0]); */ 
+      /* 	xvals[0], yvals[0], zvals[0]); */
       tmp = make_scale( xvals[0], yvals[0], zvals[0]);
-      matrix_mult(tmp, transform);
+      matrix_mult(peek(cstacks), tmp);
+      copy_matrix(tmp, peek(cstacks));
     }//end scale
 
     else if ( strncmp(line, "move", strlen(line)) == 0 ) {
@@ -201,9 +211,10 @@ void parse_file ( char * filename,
       sscanf(line, "%lf %lf %lf",
              xvals, yvals, zvals);
       /* printf("%lf %lf %lf\n", */
-      /* 	xvals[0], yvals[0], zvals[0]); */ 
+      /* 	xvals[0], yvals[0], zvals[0]); */
       tmp = make_translate( xvals[0], yvals[0], zvals[0]);
-      matrix_mult(tmp, transform);
+      matrix_mult(peek(cstacks), tmp);
+      copy_matrix(tmp, peek(cstacks));
     }//end translate
 
     else if ( strncmp(line, "rotate", strlen(line)) == 0 ) {
@@ -221,25 +232,11 @@ void parse_file ( char * filename,
       else
         tmp = make_rotZ( theta );
 
-      matrix_mult(tmp, transform);
+      matrix_mult(peek(cstacks), tmp);
+      copy_matrix(tmp, peek(cstacks));
     }//end rotate
 
-    else if ( strncmp(line, "clear", strlen(line)) == 0 ) {
-      //printf("clear\t%s", line);
-      edges->lastcol = 0;
-      polygons->lastcol = 0;
-    }//end clear
 
-    else if ( strncmp(line, "ident", strlen(line)) == 0 ) {
-      //printf("IDENT\t%s", line);
-      ident(transform);
-    }//end ident
-
-    else if ( strncmp(line, "apply", strlen(line)) == 0 ) {
-      //printf("APPLY\t%s", line);
-      matrix_mult(transform, edges);
-      matrix_mult(transform, polygons);
-    }//end apply
 
     else if ( strncmp(line, "display", strlen(line)) == 0 ) {
       //printf("DISPLAY\t%s", line);
@@ -248,6 +245,14 @@ void parse_file ( char * filename,
       draw_polygons(polygons, s, c);
       display( s );
     }//end display
+
+    else if ( strncmp(line, "push", strlen(line)) == 0 ){
+      push(cstacks);
+    }//end push
+
+    else if (strncmp (line, "pop", strlen(line)) == 0){
+      pop(cstacks);
+    }//end pop
 
     else if ( strncmp(line, "save", strlen(line)) == 0 ) {
       fgets(line, sizeof(line), f);
