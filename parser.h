@@ -6,7 +6,7 @@
 #include "stack.h"
 
 void parse_file ( char * filename,
-                  struct matrix * cstacks,
+                  struct stack * cstacks,
                   struct matrix * edges,
                   struct matrix * polygons,
                   screen s);

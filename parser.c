@@ -64,7 +64,7 @@ be sure to conver those degrees to radians (M_PI is the constant
 for PI)
 ====================*/
 void parse_file ( char * filename,
-                  struct matrix * transform,
+                  struct stack * stack,
                   struct matrix * edges,
                   struct matrix * polygons,
                   screen s) {
@@ -145,7 +145,7 @@ void parse_file ( char * filename,
       sscanf(line, "%lf %lf %lf %lf",
              xvals, yvals, zvals, &r);
       add_circle( edges, xvals[0], yvals[0], zvals[0], r, step);
-      matrix_mult(peek(ctacks), edges);
+      matrix_mult(peek(cstacks), edges);
       draw_lines(edges, s, c);
       edges->lastcol = 0;
     }//end of circle
