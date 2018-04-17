@@ -64,7 +64,7 @@ be sure to conver those degrees to radians (M_PI is the constant
 for PI)
 ====================*/
 void parse_file ( char * filename,
-                  struct stack * stack,
+                  struct stack * cstacks,
                   struct matrix * edges,
                   struct matrix * polygons,
                   screen s) {
@@ -72,8 +72,6 @@ void parse_file ( char * filename,
   FILE *f;
   char line[255];
   clear_screen(s);
-
-  struct stack *cstacks = new_stack();
 
   color c;
   c.red = 0;
@@ -235,8 +233,6 @@ void parse_file ( char * filename,
       matrix_mult(peek(cstacks), tmp);
       copy_matrix(tmp, peek(cstacks));
     }//end rotate
-
-
 
     else if ( strncmp(line, "display", strlen(line)) == 0 ) {
       //printf("DISPLAY\t%s", line);
