@@ -235,10 +235,6 @@ void parse_file ( char * filename,
     }//end rotate
 
     else if ( strncmp(line, "display", strlen(line)) == 0 ) {
-      //printf("DISPLAY\t%s", line);
-      clear_screen(s);
-      draw_lines(edges, s, c);
-      draw_polygons(polygons, s, c);
       display( s );
     }//end display
 
@@ -253,10 +249,6 @@ void parse_file ( char * filename,
     else if ( strncmp(line, "save", strlen(line)) == 0 ) {
       fgets(line, sizeof(line), f);
       *strchr(line, '\n') = 0;
-      //printf("SAVE\t%s\n", line);
-      clear_screen(s);
-      draw_lines(edges, s, c);
-      draw_polygons(polygons, s, c);
       save_extension(s, line);
     }//end save
   }
